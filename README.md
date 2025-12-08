@@ -447,6 +447,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/superapp_cli&type=Date)](https://star-history.com/#ajaychikshetty/superapp_cli&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=ajaychikshetty/superapp_cli&type=Date)](https://star-history.com/#ajaychikshetty/superapp_cli&Date)
 
 ---
