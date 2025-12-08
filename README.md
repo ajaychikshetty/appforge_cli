@@ -444,9 +444,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - GitHub: [@ajaychikshetty](https://github.com/ajaychikshetty)
 - Email: ajaychikshetty123@gmail.com
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=ajaychikshetty/superapp_cli&type=Date)](https://star-history.com/#ajaychikshetty/superapp_cli&Date)
-
----

@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as path;
-import 'package:superapp_cli/templates/ChatbotTemplates.dart' show ChatbotTemplates;
 import 'package:superapp_cli/templates/app_router_template.dart';
+import 'package:superapp_cli/templates/chatbot_templates.dart' show ChatbotTemplates;
+import 'package:superapp_cli/templates/docker_templates.dart' show DockerTemplates;
 import 'package:superapp_cli/templates/firebase_operations_template.dart';
 import 'package:superapp_cli/templates/main_template.dart';
 import 'package:superapp_cli/templates/pubspec_template.dart';
@@ -19,6 +20,7 @@ class ProjectGenerator {
     required this.includeFirebase,
     this.firebaseModules = const [],
     this.includeChatbot = false,
+    this.includeDocker = false,
     required this.themeColor,
     required this.authType,
     required this.logger,
@@ -30,6 +32,7 @@ class ProjectGenerator {
   final bool includeFirebase;
   final List<String> firebaseModules;
   final bool includeChatbot;
+  final bool includeDocker;
   final String themeColor;
   final String authType;
   final Logger logger;
@@ -78,6 +81,11 @@ class ProjectGenerator {
     // Step 13: Configure Firebase if needed
     if (includeFirebase) {
       await _configureFirebase();
+    }
+
+    // Step 14: Generate Docker setup if enabled
+    if (includeDocker) {
+      await _generateDockerSetup();
     }
 
     logger.success('✨ Project generated successfully with $themeColor theme!');
@@ -581,5 +589,79 @@ void main() {
       logger.info('  cd $projectName');
       logger.info('  flutterfire configure');
     }
+  }
+
+  Future<void> _generateDockerSetup() async {
+    logger.info('');
+    logger.info('🐳 Generating Docker setup...');
+
+    // Import Docker templates at the top
+    // For now, we'll inline the templates or assume they're accessible
+
+    // Generate Dockerfile
+    final dockerfilePath = path.join(projectName, 'Dockerfile');
+    await FileUtils.writeFile(dockerfilePath, DockerTemplates.generateDockerfile());
+    logger.detail('✓ Generated Dockerfile');
+
+    // Generate nginx.conf
+    final nginxPath = path.join(projectName, 'nginx.conf');
+    await FileUtils.writeFile(nginxPath, DockerTemplates.generateNginxConfig());
+    logger.detail('✓ Generated nginx.conf');
+
+    // Generate docker-compose.yml
+    final dockerComposePath = path.join(projectName, 'docker-compose.yml');
+    await FileUtils.writeFile(
+      dockerComposePath,
+      DockerTemplates.generateDockerCompose(projectName),
+    );
+    logger.detail('✓ Generated docker-compose.yml');
+
+    // Generate docker-compose.prod.yml
+    final dockerComposeProdPath = path.join(projectName, 'docker-compose.prod.yml');
+    await FileUtils.writeFile(
+      dockerComposeProdPath,
+      DockerTemplates.generateDockerComposeProduction(projectName),
+    );
+    logger.detail('✓ Generated docker-compose.prod.yml');
+
+    // Generate .dockerignore
+    final dockerignorePath = path.join(projectName, '.dockerignore');
+    await FileUtils.writeFile(dockerignorePath, DockerTemplates.generateDockerignore());
+    logger.detail('✓ Generated .dockerignore');
+
+    // Generate Makefile
+    final makefilePath = path.join(projectName, 'Makefile');
+    await FileUtils.writeFile(makefilePath, DockerTemplates.generateMakefile(projectName));
+    logger.detail('✓ Generated Makefile');
+
+    // Generate DOCKER.md
+    final dockerReadmePath = path.join(projectName, 'DOCKER.md');
+    await FileUtils.writeFile(
+      dockerReadmePath,
+      DockerTemplates.generateDockerReadme(projectName),
+    );
+    logger.detail('✓ Generated DOCKER.md');
+
+    // Generate GitHub Actions workflow
+    final workflowDir = path.join(projectName, '.github', 'workflows');
+    await Directory(workflowDir).create(recursive: true);
+    
+    final workflowPath = path.join(workflowDir, 'docker-build.yml');
+    await FileUtils.writeFile(
+      workflowPath,
+      DockerTemplates.generateGithubActionsDocker(projectName),
+    );
+    logger.detail('✓ Generated GitHub Actions workflow');
+
+    logger.success('✨ Docker setup generated successfully!');
+    logger.info('');
+    logger.info('🐳 Docker Commands:');
+    logger.info('  make build      - Build Docker image');
+    logger.info('  make run        - Run production');
+    logger.info('  make dev        - Run development with hot-reload');
+    logger.info('  make stop       - Stop containers');
+    logger.info('  make logs       - View logs');
+    logger.info('');
+    logger.info('📖 See DOCKER.md for complete documentation');
   }
 }
