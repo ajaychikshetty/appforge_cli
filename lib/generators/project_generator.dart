@@ -3,14 +3,17 @@ import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:superapp_cli/templates/app_localization_template.dart';
 import 'package:superapp_cli/templates/app_router_template.dart';
-import 'package:superapp_cli/templates/chatbot_templates.dart' show ChatbotTemplates;
-import 'package:superapp_cli/templates/docker_templates.dart' show DockerTemplates;
+import 'package:superapp_cli/templates/chatbot_templates.dart'
+    show ChatbotTemplates;
+import 'package:superapp_cli/templates/docker_templates.dart'
+    show DockerTemplates;
 import 'package:superapp_cli/templates/firebase_operations_template.dart';
 import 'package:superapp_cli/templates/main_template.dart';
 import 'package:superapp_cli/templates/pubspec_template.dart';
 import 'package:superapp_cli/templates/theme_template.dart';
 import 'package:superapp_cli/templates/screen_templates.dart';
-import 'package:superapp_cli/templates/widgets_template.dart' show ReusableWidgetsTemplate;
+import 'package:superapp_cli/templates/widgets_template.dart'
+    show ReusableWidgetsTemplate;
 import 'package:superapp_cli/utils/file_utils.dart';
 
 class ProjectGenerator {
@@ -22,11 +25,14 @@ class ProjectGenerator {
     this.firebaseModules = const [],
     this.includeChatbot = false,
     this.includeDocker = false,
-    this.selectedLanguages = const ['en'],
+    List<String>? selectedLanguages,
     required this.themeColor,
     required this.authType,
     required this.logger,
-  });
+  }) : selectedLanguages =
+            (selectedLanguages == null || selectedLanguages.isEmpty)
+                ? const ['en']
+                : selectedLanguages;
 
   final String projectName;
   final String organization;
@@ -35,7 +41,7 @@ class ProjectGenerator {
   final List<String> firebaseModules;
   final bool includeChatbot;
   final bool includeDocker;
-  final List<String> selectedLanguages;
+  final List<String> selectedLanguages; // always non-null, at least ['en']
   final String themeColor;
   final String authType;
   final Logger logger;
@@ -100,12 +106,14 @@ class ProjectGenerator {
   }
 
   Future<void> _generateTheme() async {
-    final themePath = path.join(projectName, 'lib', 'app', 'theme', 'app_theme.dart');
+    final themePath =
+        path.join(projectName, 'lib', 'app', 'theme', 'app_theme.dart');
     await Directory(path.dirname(themePath)).create(recursive: true);
 
     final content = ThemeTemplate.generate(themeColor);
     await FileUtils.writeFile(themePath, content);
-    logger.detail('Generated theme at $themePath with $themeColor color scheme');
+    logger
+        .detail('Generated theme at $themePath with $themeColor color scheme');
   }
 
   Future<void> _generateFirebaseOperations() async {
@@ -114,9 +122,10 @@ class ProjectGenerator {
 
     final content = FirebaseOperationsTemplate.generate(firebaseModules);
     final filePath = path.join(firebaseDir, 'firebase_operations.dart');
-    
+
     await FileUtils.writeFile(filePath, content);
-    logger.detail('Generated Firebase operations file with modules: ${firebaseModules.join(', ')}');
+    logger.detail(
+        'Generated Firebase operations file with modules: ${firebaseModules.join(', ')}');
   }
 
   Future<void> _generateReusableWidgets() async {
@@ -125,12 +134,15 @@ class ProjectGenerator {
 
     final widgets = {
       'custom_app_bar.dart': ReusableWidgetsTemplate.generateCustomAppBar(),
-      'custom_bottom_nav_bar.dart': ReusableWidgetsTemplate.generateBottomNavBar(),
-      'loading_indicators.dart': ReusableWidgetsTemplate.generateLoadingIndicators(),
+      'custom_bottom_nav_bar.dart':
+          ReusableWidgetsTemplate.generateBottomNavBar(),
+      'loading_indicators.dart':
+          ReusableWidgetsTemplate.generateLoadingIndicators(),
       'custom_cards.dart': ReusableWidgetsTemplate.generateCustomCards(),
       'custom_buttons.dart': ReusableWidgetsTemplate.generateCustomButtons(),
       'empty_states.dart': ReusableWidgetsTemplate.generateEmptyStates(),
-      'custom_input_fields.dart': ReusableWidgetsTemplate.generateCustomInputFields(),
+      'custom_input_fields.dart':
+          ReusableWidgetsTemplate.generateCustomInputFields(),
       'dialog_helper.dart': ReusableWidgetsTemplate.generateDialogHelpers(),
       'snackbar_helper.dart': ReusableWidgetsTemplate.generateSnackbarHelpers(),
       'custom_list_tiles.dart': ReusableWidgetsTemplate.generateListTiles(),
@@ -150,9 +162,10 @@ class ProjectGenerator {
 
   Future<void> _generateChatbot() async {
     logger.info('🤖 Generating AI Chatbot with BLoC...');
-    
-    final chatbotBasePath = path.join(projectName, 'lib', 'features', 'chatbot');
-    
+
+    final chatbotBasePath =
+        path.join(projectName, 'lib', 'features', 'chatbot');
+
     // Create all necessary directories
     final directories = [
       path.join(chatbotBasePath, 'screens'),
@@ -160,13 +173,14 @@ class ProjectGenerator {
       path.join(chatbotBasePath, 'models'),
       path.join(chatbotBasePath, 'bloc'),
     ];
-    
+
     for (final dir in directories) {
       await Directory(dir).create(recursive: true);
     }
 
     // Generate Chatbot Screen (with BLoC)
-    final chatbotScreenPath = path.join(chatbotBasePath, 'screens', 'chatbot_screen.dart');
+    final chatbotScreenPath =
+        path.join(chatbotBasePath, 'screens', 'chatbot_screen.dart');
     await FileUtils.writeFile(
       chatbotScreenPath,
       ChatbotTemplates.generateChatScreen(projectName),
@@ -174,7 +188,8 @@ class ProjectGenerator {
     logger.detail('✓ Generated chatbot_screen.dart');
 
     // Generate Chatbot Service
-    final chatbotServicePath = path.join(chatbotBasePath, 'services', 'chatbot_service.dart');
+    final chatbotServicePath =
+        path.join(chatbotBasePath, 'services', 'chatbot_service.dart');
     await FileUtils.writeFile(
       chatbotServicePath,
       ChatbotTemplates.generateChatbotService(projectName),
@@ -182,7 +197,8 @@ class ProjectGenerator {
     logger.detail('✓ Generated chatbot_service.dart');
 
     // Generate Chat Message Model
-    final chatMessageModelPath = path.join(chatbotBasePath, 'models', 'chat_message_model.dart');
+    final chatMessageModelPath =
+        path.join(chatbotBasePath, 'models', 'chat_message_model.dart');
     await FileUtils.writeFile(
       chatMessageModelPath,
       ChatbotTemplates.generateChatMessageModel(),
@@ -191,7 +207,7 @@ class ProjectGenerator {
 
     // Generate BLoC files
     final blocPath = path.join(chatbotBasePath, 'bloc');
-    
+
     // Generate chatbot_bloc.dart
     await FileUtils.writeFile(
       path.join(blocPath, 'chatbot_bloc.dart'),
@@ -216,7 +232,7 @@ class ProjectGenerator {
     // Generate app_constants.dart
     final constantsDir = path.join(projectName, 'lib', 'core', 'constants');
     await Directory(constantsDir).create(recursive: true);
-    
+
     final appConstantsPath = path.join(constantsDir, 'app_constants.dart');
     await FileUtils.writeFile(
       appConstantsPath,
@@ -230,17 +246,18 @@ class ProjectGenerator {
     logger.detail('✓ Generated .env file');
 
     final envExamplePath = path.join(projectName, '.env.example');
-    await FileUtils.writeFile(envExamplePath, ChatbotTemplates.generateEnvExampleFile());
+    await FileUtils.writeFile(
+        envExamplePath, ChatbotTemplates.generateEnvExampleFile());
     logger.detail('✓ Generated .env.example file');
 
     // Update .gitignore
     final gitignorePath = path.join(projectName, '.gitignore');
     final gitignoreExists = await File(gitignorePath).exists();
-    
+
     if (gitignoreExists) {
       final currentContent = await File(gitignorePath).readAsString();
       final addition = ChatbotTemplates.generateGitignoreAddition();
-      
+
       if (!currentContent.contains('.env')) {
         await File(gitignorePath).writeAsString(
           currentContent + addition,
@@ -250,17 +267,19 @@ class ProjectGenerator {
       }
     }
 
-    logger.success('✨ Chatbot generated successfully with BLoC state management!');
+    logger.success(
+        '✨ Chatbot generated successfully with BLoC state management!');
   }
 
-  Future<void> _generateWidgetsBarrelFile(String widgetsDir, List<String> fileNames) async {
+  Future<void> _generateWidgetsBarrelFile(
+      String widgetsDir, List<String> fileNames) async {
     final exports = fileNames.map((name) => "export '$name';").join('\n');
     final barrelContent = '''
 // Barrel file for shared widgets
 // Import this file to access all reusable widgets
 $exports
 ''';
-    
+
     final barrelPath = path.join(widgetsDir, 'widgets.dart');
     await FileUtils.writeFile(barrelPath, barrelContent);
     logger.detail('Generated widgets barrel file');
@@ -320,7 +339,8 @@ $exports
   }
 
   Future<void> _generateAuthScreens() async {
-    final authDir = path.join(projectName, 'lib', 'features', 'auth', 'screens');
+    final authDir =
+        path.join(projectName, 'lib', 'features', 'auth', 'screens');
     await Directory(authDir).create(recursive: true);
 
     switch (authType) {
@@ -425,10 +445,12 @@ $exports
   }
 
   Future<void> _generateRouter() async {
-    final routerPath = path.join(projectName, 'lib', 'app', 'router', 'app_router.dart');
+    final routerPath =
+        path.join(projectName, 'lib', 'app', 'router', 'app_router.dart');
     await Directory(path.dirname(routerPath)).create(recursive: true);
 
-    final content = AppRouterTemplate.generate(projectName, includeChatbot: includeChatbot);
+    final content =
+        AppRouterTemplate.generate(projectName, includeChatbot: includeChatbot);
     await FileUtils.writeFile(routerPath, content);
     logger.detail('Generated router at $routerPath');
   }
@@ -554,10 +576,10 @@ void main() {
   Future<void> _configureFirebase() async {
     logger.info('');
     logger.info('🔥 Setting up Firebase...');
-    
+
     // Check if flutterfire CLI is installed
     final checkResult = await Process.run('flutterfire', ['--version']);
-    
+
     if (checkResult.exitCode != 0) {
       logger.warn('FlutterFire CLI is not installed.');
       logger.info('');
@@ -575,7 +597,8 @@ void main() {
     logger.info('Running flutterfire configure...');
     logger.info('');
     logger.info('⚠️  You will need:');
-    logger.info('  • A Firebase project (create at https://console.firebase.google.com)');
+    logger.info(
+        '  • A Firebase project (create at https://console.firebase.google.com)');
     logger.info('  • Firebase CLI logged in (run: firebase login)');
     logger.info('');
 
@@ -609,7 +632,8 @@ void main() {
 
     // Generate Dockerfile
     final dockerfilePath = path.join(projectName, 'Dockerfile');
-    await FileUtils.writeFile(dockerfilePath, DockerTemplates.generateDockerfile());
+    await FileUtils.writeFile(
+        dockerfilePath, DockerTemplates.generateDockerfile());
     logger.detail('✓ Generated Dockerfile');
 
     // Generate nginx.conf
@@ -626,7 +650,8 @@ void main() {
     logger.detail('✓ Generated docker-compose.yml');
 
     // Generate docker-compose.prod.yml
-    final dockerComposeProdPath = path.join(projectName, 'docker-compose.prod.yml');
+    final dockerComposeProdPath =
+        path.join(projectName, 'docker-compose.prod.yml');
     await FileUtils.writeFile(
       dockerComposeProdPath,
       DockerTemplates.generateDockerComposeProduction(projectName),
@@ -635,12 +660,14 @@ void main() {
 
     // Generate .dockerignore
     final dockerignorePath = path.join(projectName, '.dockerignore');
-    await FileUtils.writeFile(dockerignorePath, DockerTemplates.generateDockerignore());
+    await FileUtils.writeFile(
+        dockerignorePath, DockerTemplates.generateDockerignore());
     logger.detail('✓ Generated .dockerignore');
 
     // Generate Makefile
     final makefilePath = path.join(projectName, 'Makefile');
-    await FileUtils.writeFile(makefilePath, DockerTemplates.generateMakefile(projectName));
+    await FileUtils.writeFile(
+        makefilePath, DockerTemplates.generateMakefile(projectName));
     logger.detail('✓ Generated Makefile');
 
     // Generate DOCKER.md
@@ -654,7 +681,7 @@ void main() {
     // Generate GitHub Actions workflow
     final workflowDir = path.join(projectName, '.github', 'workflows');
     await Directory(workflowDir).create(recursive: true);
-    
+
     final workflowPath = path.join(workflowDir, 'docker-build.yml');
     await FileUtils.writeFile(
       workflowPath,
@@ -675,8 +702,20 @@ void main() {
   }
 
   Future<void> _generateLocalization() async {
+    // If for some reason list is empty, bail early (shouldn't happen now)
+    if (selectedLanguages.isEmpty) {
+      logger.detail('No languages selected, skipping localization.');
+      return;
+    }
+
     logger.info('');
     logger.info('🌍 Generating localization files...');
+
+    // Always ensure 'en' is included as base/template
+    final langs = {
+      'en',
+      ...selectedLanguages,
+    }.toList();
 
     // Create l10n directory
     final l10nDir = path.join(projectName, 'lib', 'l10n');
@@ -686,25 +725,28 @@ void main() {
     final l10nConfigPath = path.join(projectName, 'l10n.yaml');
     await FileUtils.writeFile(
       l10nConfigPath,
-      LocalizationTemplates.generateL10nConfig(selectedLanguages),
+      LocalizationTemplates.generateL10nConfig(langs),
     );
     logger.detail('✓ Generated l10n.yaml');
 
     // Generate English ARB (template)
     final enArbPath = path.join(l10nDir, 'app_en.arb');
-    await FileUtils.writeFile(enArbPath, LocalizationTemplates.generateEnglishArb());
+    await FileUtils.writeFile(
+      enArbPath,
+      LocalizationTemplates.generateEnglishArb(),
+    );
     logger.detail('✓ Generated app_en.arb (template)');
 
     // Generate ARB files for other selected languages
-    for (final lang in selectedLanguages) {
-      if (lang != 'en') {
-        final arbPath = path.join(l10nDir, 'app_$lang.arb');
-        await FileUtils.writeFile(
-          arbPath,
-          LocalizationTemplates.generateArbFile(lang),
-        );
-        logger.detail('✓ Generated app_$lang.arb');
-      }
+    for (final lang in langs) {
+      if (lang == 'en') continue;
+
+      final arbPath = path.join(l10nDir, 'app_$lang.arb');
+      await FileUtils.writeFile(
+        arbPath,
+        LocalizationTemplates.generateArbFile(lang),
+      );
+      logger.detail('✓ Generated app_$lang.arb');
     }
 
     // Generate LocaleProvider
@@ -742,10 +784,10 @@ void main() {
 
     logger.success('✨ Localization generated successfully!');
     logger.info('');
-    logger.info('🌍 Supported Languages: ${selectedLanguages.join(', ')}');
+    logger.info('🌍 Supported Languages: ${langs.join(', ')}');
     logger.info('');
     logger.info('Generating localization files...');
-    
+
     // Run flutter gen-l10n to generate the localization files
     final genL10nResult = await Process.run(
       'flutter',
@@ -756,10 +798,13 @@ void main() {
     if (genL10nResult.exitCode == 0) {
       logger.success('✓ Localization files generated successfully');
     } else {
-      logger.warn('Warning: flutter gen-l10n failed. You may need to run it manually.');
+      logger.warn(
+          'Warning: flutter gen-l10n failed. You may need to run it manually.');
+      logger.detail('stdout: ${genL10nResult.stdout}');
+      logger.detail('stderr: ${genL10nResult.stderr}');
       logger.detail('Run: cd $projectName && flutter gen-l10n');
     }
-    
+
     logger.info('');
     logger.info('📖 See LOCALIZATION.md for usage guide');
   }

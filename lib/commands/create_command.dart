@@ -1,7 +1,5 @@
-// ignore: unused_import
 import 'dart:io';
 import 'package:args/command_runner.dart';
-import 'package:interact/interact.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:superapp_cli/generators/project_generator.dart';
 
@@ -71,14 +69,16 @@ class CreateCommand extends Command<int> {
     final org = argResults?['org'] as String;
     String? stateManagement = argResults?['state'] as String?; // nullable
     String? themeColor = argResults?['theme'] as String?; // nullable
-    
+
     // Check if firebase flag was explicitly provided
     final firebaseFlagProvided = argResults?.wasParsed('firebase') ?? false;
-    bool? includeFirebase = firebaseFlagProvided ? (argResults?['firebase'] as bool?) : null;
+    bool? includeFirebase =
+        firebaseFlagProvided ? (argResults?['firebase'] as bool?) : null;
 
     // Check if docker flag was explicitly provided
     final dockerFlagProvided = argResults?.wasParsed('docker') ?? false;
-    bool? includeDocker = dockerFlagProvided ? (argResults?['docker'] as bool?) : null;
+    bool? includeDocker =
+        dockerFlagProvided ? (argResults?['docker'] as bool?) : null;
 
     // Non-interactive flags
     final nonInteractive = (argResults?['yes'] as bool) == true ||
@@ -92,13 +92,13 @@ class CreateCommand extends Command<int> {
     // Allowed options
     final allowedStates = ['provider', 'riverpod', 'bloc'];
     final allowedThemes = ['blue', 'green', 'coffee', 'purple', 'orange'];
-    final allowedAuthTypes = [
-      'email_password',
-      'username_password',
-      'phone_otp',
-      'social_auth',
-      'all'
-    ];
+    // final allowedAuthTypes = [
+    //   'email_password',
+    //   'username_password',
+    //   'phone_otp',
+    //   'social_auth',
+    //   'all'
+    // ];
 
     // Prompt for state management only if not provided and interactive allowed
     if (stateManagement == null) {
@@ -110,7 +110,8 @@ class CreateCommand extends Command<int> {
         );
       } else {
         stateManagement = 'riverpod';
-        logger.detail('No state provided; defaulting to "riverpod" in non-interactive mode.');
+        logger.detail(
+            'No state provided; defaulting to "riverpod" in non-interactive mode.');
       }
     } else {
       if (!allowedStates.contains(stateManagement)) {
@@ -129,11 +130,13 @@ class CreateCommand extends Command<int> {
         );
       } else {
         themeColor = 'blue';
-        logger.detail('No theme provided; defaulting to "blue" in non-interactive mode.');
+        logger.detail(
+            'No theme provided; defaulting to "blue" in non-interactive mode.');
       }
     } else {
       if (!allowedThemes.contains(themeColor)) {
-        logger.err('Invalid --theme value. Allowed: blue, green, coffee, purple, orange');
+        logger.err(
+            'Invalid --theme value. Allowed: blue, green, coffee, purple, orange');
         return 1;
       }
     }
@@ -157,7 +160,8 @@ class CreateCommand extends Command<int> {
       authType = authType.split(' ').first;
     } else {
       authType = 'email_password';
-      logger.detail('No auth type provided; defaulting to "email_password" in non-interactive mode.');
+      logger.detail(
+          'No auth type provided; defaulting to "email_password" in non-interactive mode.');
     }
 
     // Prompt for Chatbot
@@ -178,7 +182,7 @@ class CreateCommand extends Command<int> {
         '🔥 Include Firebase?',
         defaultValue: false,
       );
-      
+
       if (includeFirebase) {
         // Ask which Firebase modules to include
         logger.info('');
@@ -192,10 +196,11 @@ class CreateCommand extends Command<int> {
           ],
           defaultValues: ['auth - Authentication'],
         );
-        
+
         // Extract module keys
-        firebaseModules = selectedModules.map((m) => m.split(' ').first).toList();
-        
+        firebaseModules =
+            selectedModules.map((m) => m.split(' ').first).toList();
+
         // Core is always included if any module is selected
         if (firebaseModules.isNotEmpty && !firebaseModules.contains('core')) {
           firebaseModules.insert(0, 'core');
@@ -203,7 +208,8 @@ class CreateCommand extends Command<int> {
       }
     } else if (includeFirebase == null) {
       includeFirebase = false;
-      logger.detail('Firebase not specified; defaulting to false in non-interactive mode.');
+      logger.detail(
+          'Firebase not specified; defaulting to false in non-interactive mode.');
     } else if (includeFirebase) {
       // If Firebase enabled via flag, include all modules by default
       firebaseModules = ['core', 'auth', 'firestore', 'storage', 'fcm'];
@@ -218,7 +224,8 @@ class CreateCommand extends Command<int> {
       );
     } else if (includeDocker == null) {
       includeDocker = false;
-      logger.detail('Docker not specified; defaulting to false in non-interactive mode.');
+      logger.detail(
+          'Docker not specified; defaulting to false in non-interactive mode.');
     }
 
     // Prompt for localization
@@ -232,8 +239,9 @@ class CreateCommand extends Command<int> {
 
       if (wantsLocalization) {
         logger.info('');
-        logger.info('Select additional languages (English is already included):');
-        
+        logger
+            .info('Select additional languages (English is already included):');
+
         final availableLanguages = [
           'es - Spanish (Español)',
           'fr - French (Français)',
@@ -282,11 +290,11 @@ class CreateCommand extends Command<int> {
         ..info('  Firebase: ${includeFirebase ? '🔥 Yes' : '✗ No'}')
         ..info('  Docker: ${includeDocker ? '🐳 Yes' : '✗ No'}')
         ..info('  Languages: 🌍 ${selectedLanguages.join(', ')}');
-      
+
       if (includeFirebase && firebaseModules.isNotEmpty) {
         logger.info('  Firebase Modules: ${firebaseModules.join(', ')}');
       }
-      
+
       logger.info('');
 
       final confirm = logger.confirm(
@@ -319,7 +327,7 @@ class CreateCommand extends Command<int> {
 
       await generator.generate();
       progress.complete('Project created successfully!');
-            // Run flutterfire configure inside the generated project folder
+      // Run flutterfire configure inside the generated project folder
       if (includeFirebase == true) {
         logger.info('');
         logger.info('Running flutterfire configure inside ./$projectName ...');
@@ -344,22 +352,24 @@ class CreateCommand extends Command<int> {
         ..success('✨ Flutter app created: $projectName')
         ..success('🎨 Theme: ${_getThemeEmoji(themeColor)} $themeColor')
         ..success('🔐 Auth: ${_getAuthTypeDisplay(authType)}')
-        ..success('🤖 AI Chatbot: ${includeChatbot ? 'Enabled (Gemini)' : 'Disabled'}')
+        ..success(
+            '🤖 AI Chatbot: ${includeChatbot ? 'Enabled (Gemini)' : 'Disabled'}')
         ..success('🔥 Firebase: ${includeFirebase ? 'Enabled' : 'Disabled'}')
         ..success('🐳 Docker: ${includeDocker ? 'Enabled' : 'Disabled'}')
         ..success('🌍 Languages: ${selectedLanguages.join(', ')}');
-      
+
       if (includeFirebase && firebaseModules.isNotEmpty) {
         logger.success('   Modules: ${firebaseModules.join(', ')}');
       }
-      
+
       logger
         ..info('')
         ..info('Next steps:')
         ..info('  1. cd $projectName');
-      
+
       if (includeChatbot) {
-        logger.info('  2. Add your Gemini API key in lib/core/constants/app_constants.dart');
+        logger.info(
+            '  2. Add your Gemini API key in lib/core/constants/app_constants.dart');
         logger.info('  3. flutter run');
       } else {
         logger.info('  2. flutter run');
@@ -374,7 +384,7 @@ class CreateCommand extends Command<int> {
           ..info('  • make dev      - Development with hot-reload')
           ..info('  • See DOCKER.md for complete documentation');
       }
-      
+
       logger
         ..info('')
         ..info('📱 Your app includes:')
@@ -421,12 +431,13 @@ class CreateCommand extends Command<int> {
       }
 
       if (selectedLanguages.length > 1) {
-        logger.info('  • Multi-language support (${selectedLanguages.length} languages)');
+        logger.info(
+            '  • Multi-language support (${selectedLanguages.length} languages)');
         logger.info('  • Language selector widget');
         logger.info('  • Persistent language preference');
         logger.info('  • RTL support for Arabic');
       }
-      
+
       logger.info('');
 
       return 0;
@@ -437,6 +448,7 @@ class CreateCommand extends Command<int> {
       return 1;
     }
   }
+
   Future<bool> _runFlutterFireConfigure({
     required String projectName,
     required Logger logger,

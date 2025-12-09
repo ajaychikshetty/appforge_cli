@@ -115,6 +115,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   build_runner: ^2.4.13
+  provider: ^6.1.5+1
 
 flutter:
   uses-material-design: true
