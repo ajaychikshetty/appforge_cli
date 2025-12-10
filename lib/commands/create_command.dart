@@ -92,13 +92,6 @@ class CreateCommand extends Command<int> {
     // Allowed options
     final allowedStates = ['provider', 'riverpod', 'bloc'];
     final allowedThemes = ['blue', 'green', 'coffee', 'purple', 'orange'];
-    // final allowedAuthTypes = [
-    //   'email_password',
-    //   'username_password',
-    //   'phone_otp',
-    //   'social_auth',
-    //   'all'
-    // ];
 
     // Prompt for state management only if not provided and interactive allowed
     if (stateManagement == null) {
@@ -276,6 +269,43 @@ class CreateCommand extends Command<int> {
       }
     }
 
+    // Prompt for Utility Modules
+    List<String> selectedModules = [];
+    if (!nonInteractive) {
+      logger.info('');
+      final wantsModules = logger.confirm(
+        '📱 Include utility modules (camera, speech, etc.)?',
+        defaultValue: false,
+      );
+
+      if (wantsModules) {
+        logger.info('');
+        logger.info('Select utility modules:');
+        
+        final moduleChoices = [
+          'camera - Camera service for photos/videos',
+          'speech - Speech-to-text & text-to-speech',
+          'recorder - Audio recording service',
+          'call - Phone call & VoIP service',
+        ];
+        
+        final selectedModuleChoices = logger.chooseAny(
+          '📦 Select modules (space to select, enter to continue):',
+          choices: moduleChoices,
+          defaultValues: [],
+        );
+        
+        // Extract module keys
+        selectedModules = selectedModuleChoices
+            .map((m) => m.split(' ').first)
+            .toList()
+            .cast<String>();
+      }
+    } else {
+      // In non-interactive mode, no modules selected by default
+      logger.detail('No utility modules selected in non-interactive mode.');
+    }
+
     // Show summary before proceeding
     if (!nonInteractive) {
       logger
@@ -293,6 +323,10 @@ class CreateCommand extends Command<int> {
 
       if (includeFirebase && firebaseModules.isNotEmpty) {
         logger.info('  Firebase Modules: ${firebaseModules.join(', ')}');
+      }
+      
+      if (selectedModules.isNotEmpty) {
+        logger.info('  Utility Modules: ${_formatModuleNames(selectedModules)}');
       }
 
       logger.info('');
@@ -323,10 +357,12 @@ class CreateCommand extends Command<int> {
         themeColor: themeColor!,
         authType: authType,
         logger: logger,
+        selectedModules: selectedModules, // Pass selected modules
       );
 
       await generator.generate();
       progress.complete('Project created successfully!');
+      
       // Run flutterfire configure inside the generated project folder
       if (includeFirebase == true) {
         logger.info('');
@@ -361,6 +397,10 @@ class CreateCommand extends Command<int> {
       if (includeFirebase && firebaseModules.isNotEmpty) {
         logger.success('   Modules: ${firebaseModules.join(', ')}');
       }
+      
+      if (selectedModules.isNotEmpty) {
+        logger.success('   Utility Modules: ${_formatModuleNames(selectedModules)}');
+      }
 
       logger
         ..info('')
@@ -370,9 +410,11 @@ class CreateCommand extends Command<int> {
       if (includeChatbot) {
         logger.info(
             '  2. Add your Gemini API key in lib/core/constants/app_constants.dart');
-        logger.info('  3. flutter run');
+        logger.info('  3. flutter pub get');
+        logger.info('  4. flutter run');
       } else {
-        logger.info('  2. flutter run');
+        logger.info('  2. flutter pub get');
+        logger.info('  3. flutter run');
       }
 
       if (includeDocker) {
@@ -419,6 +461,23 @@ class CreateCommand extends Command<int> {
         }
         if (firebaseModules.contains('fcm')) {
           logger.info('    - Cloud Messaging (push notifications)');
+        }
+      }
+      
+      if (selectedModules.isNotEmpty) {
+        logger.info('  • Utility Modules:');
+        if (selectedModules.contains('camera')) {
+          logger.info('    - Camera service with permission handling');
+        }
+        if (selectedModules.contains('speech')) {
+          logger.info('    - Speech-to-text with continuous listening');
+          logger.info('    - Text-to-speech with multiple languages');
+        }
+        if (selectedModules.contains('recorder')) {
+          logger.info('    - Audio recording with pause/resume');
+        }
+        if (selectedModules.contains('call')) {
+          logger.info('    - Phone call functionality');
         }
       }
 
@@ -551,5 +610,16 @@ class CreateCommand extends Command<int> {
       default:
         return 'Login & Signup screens';
     }
+  }
+  
+  String _formatModuleNames(List<String> modules) {
+    final Map<String, String> moduleDisplayNames = {
+      'camera': '📸 Camera',
+      'speech': '🎤 Speech',
+      'recorder': '🎙️ Recorder',
+      'call': '📞 Call',
+    };
+    
+    return modules.map((m) => moduleDisplayNames[m] ?? m).join(', ');
   }
 }

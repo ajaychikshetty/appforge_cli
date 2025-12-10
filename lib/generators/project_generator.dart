@@ -27,6 +27,7 @@ class ProjectGenerator {
     this.firebaseModules = const [],
     this.includeChatbot = false,
     this.includeDocker = false,
+    this.selectedModules = const [], // Add this
     List<String>? selectedLanguages,
     required this.themeColor,
     required this.authType,
@@ -47,6 +48,7 @@ class ProjectGenerator {
   final String themeColor;
   final String authType;
   final Logger logger;
+  final List<String> selectedModules; // Add this field
 
   Future<void> generate() async {
     // Step 1: Create Flutter project
@@ -108,6 +110,69 @@ class ProjectGenerator {
     logger.success('✨ Project generated successfully with $themeColor theme!');
   }
 
+  // Add this method to prompt for modules
+  static Future<List<String>> promptForModules(Logger logger) async {
+    final modules = <String>[];
+    logger.info('📱 Utility Module Selection');
+    logger.info('Select which utility modules to include:');
+
+    // Define available modules with descriptions
+    final availableModules = {
+      'camera': {
+        'name': '📸 Camera Module',
+        'description': 'Camera service for capturing photos/videos',
+        'dependencies': ['camera', 'image_picker'],
+      },
+      'speech': {
+        'name': '🎤 Speech Module',
+        'description': 'Speech-to-text and Text-to-speech services',
+        'dependencies': ['speech_to_text', 'flutter_tts'],
+      },
+      'recorder': {
+        'name': '🎙️ Audio Recorder Module',
+        'description': 'Audio recording and playback service',
+        'dependencies': ['record', 'path_provider'],
+      },
+      'call': {
+        'name': '📞 Call Module',
+        'description': 'Phone call and VoIP service',
+        'dependencies': ['url_launcher', 'permission_handler'],
+      },
+    };
+
+    for (final entry in availableModules.entries) {
+      final moduleKey = entry.key;
+      final moduleInfo = entry.value;
+
+      logger.info('');
+      logger.info('${moduleInfo['name']}');
+      logger.info('  ${moduleInfo['description']}');
+      logger.info(
+          '  Dependencies: ${(moduleInfo['dependencies'] as List<String>).join(', ')}');
+
+      final include = await logger.confirm(
+        'Include ${moduleInfo['name']}?',
+        defaultValue: false,
+      );
+
+      if (include) {
+        modules.add(moduleKey);
+        logger.success('✓ Added ${moduleInfo['name']}');
+      } else {
+        logger.detail('✗ Skipped ${moduleInfo['name']}');
+      }
+    }
+
+    logger.info('');
+    if (modules.isEmpty) {
+      logger.info('⚠️  No utility modules selected');
+    } else {
+      logger.success('Selected modules: ${modules.join(', ')}');
+    }
+
+    return modules;
+  }
+
 // Add this method to your ProjectGenerator class
   Future<void> _configureNative() async {
     await _configureAndroidManifest();
@@ -132,40 +197,57 @@ class ProjectGenerator {
 
     var content = await manifestFile.readAsString();
 
-    // Permissions you want to ensure are present
-    const permissionsBlock = '''
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-''';
+    // Build permissions based on selected modules
+    final permissions = StringBuffer();
+    permissions.writeln(
+        '    <uses-permission android:name="android.permission.INTERNET" />');
+    permissions.writeln(
+        '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />');
 
-    // Don’t add twice – check a single known permission
-    if (!content.contains('android.permission.CAMERA')) {
+    // Add module-specific permissions
+    if (selectedModules.contains('camera') ||
+        selectedModules.contains('recorder')) {
+      permissions.writeln(
+          '    <uses-permission android:name="android.permission.CAMERA" />');
+      permissions.writeln(
+          '    <uses-permission android:name="android.permission.RECORD_AUDIO" />');
+    }
+    if (selectedModules.contains('camera')) {
+      permissions.writeln(
+          '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />');
+      permissions.writeln(
+          '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />');
+      permissions.writeln(
+          '    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />');
+      permissions.writeln(
+          '    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />');
+    }
+    if (selectedModules.contains('call')) {
+      permissions.writeln(
+          '    <uses-permission android:name="android.permission.CALL_PHONE" />');
+    }
+
+    // Don't add twice – check a single known permission
+    if (!content.contains('android.permission.INTERNET')) {
       // Insert just before <application ...>
       if (content.contains('<application')) {
         content = content.replaceFirst(
           '<application',
-          '$permissionsBlock\n    <application',
+          '${permissions.toString()}\n    <application',
         );
       } else {
         // fallback: insert before closing </manifest>
         content = content.replaceFirst(
           '</manifest>',
-          '$permissionsBlock\n</manifest>',
+          '${permissions.toString()}\n</manifest>',
         );
       }
 
       await manifestFile.writeAsString(content);
-      logger.detail('✓ Updated AndroidManifest.xml with extra permissions');
+      logger.detail('✓ Updated AndroidManifest.xml with module permissions');
     } else {
       logger.detail(
-          'AndroidManifest.xml already contains custom permissions, skipping.');
+          'AndroidManifest.xml already contains permissions, skipping.');
     }
   }
 
@@ -185,37 +267,59 @@ class ProjectGenerator {
 
     var content = await plistFile.readAsString();
 
-    // Keys + descriptions you want
-    const plistEntries = '''
-    <key>NSCameraUsageDescription</key>
-    <string>This app requires access to the camera to capture photos and videos.</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>This app requires access to the microphone to record audio.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>This app requires access to your photo library to select images.</string>
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>This app saves photos to your library.</string>
-    <key>NSContactsUsageDescription</key>
-    <string>This app may access your contacts to improve the experience.</string>
-''';
+    // Build usage descriptions based on selected modules
+    final plistEntries = StringBuffer();
 
-    // Avoid duplicating – check one of the keys
-    if (!content.contains('NSCameraUsageDescription')) {
+    if (selectedModules.contains('camera')) {
+      plistEntries.writeln('    <key>NSCameraUsageDescription</key>');
+      plistEntries.writeln(
+          '    <string>This app requires access to the camera to capture photos and videos.</string>');
+      plistEntries.writeln('    <key>NSMicrophoneUsageDescription</key>');
+      plistEntries.writeln(
+          '    <string>This app requires access to the microphone to record audio.</string>');
+      plistEntries.writeln('    <key>NSPhotoLibraryUsageDescription</key>');
+      plistEntries.writeln(
+          '    <string>This app requires access to your photo library to select images.</string>');
+      plistEntries.writeln('    <key>NSPhotoLibraryAddUsageDescription</key>');
+      plistEntries.writeln(
+          '    <string>This app saves photos to your library.</string>');
+    }
+
+    if (selectedModules.contains('speech') ||
+        selectedModules.contains('recorder')) {
+      plistEntries.writeln('    <key>NSMicrophoneUsageDescription</key>');
+      plistEntries.writeln(
+          '    <string>This app requires access to the microphone for speech recognition and audio recording.</string>');
+    }
+
+    if (selectedModules.contains('call')) {
+      plistEntries.writeln('    <key>NSContactsUsageDescription</key>');
+      plistEntries.writeln(
+          '    <string>This app may access your contacts to make calls.</string>');
+    }
+
+    // Avoid duplicating – check if we need to add any entries
+    if (selectedModules.isNotEmpty &&
+        !content.contains('NSCameraUsageDescription')) {
       // Insert before </dict>
       content = content.replaceFirst(
         '</dict>',
-        '$plistEntries\n</dict>',
+        '${plistEntries.toString()}\n</dict>',
       );
 
       await plistFile.writeAsString(content);
-      logger.detail('✓ Updated iOS Info.plist with usage descriptions');
+      logger.detail('✓ Updated iOS Info.plist with module usage descriptions');
     } else {
-      logger
-          .detail('Info.plist already contains usage descriptions, skipping.');
+      logger.detail(
+          'Info.plist already contains usage descriptions or no modules selected, skipping.');
     }
   }
 
   Future<void> _generateUtilityModules() async {
+    if (selectedModules.isEmpty) {
+      logger.info('⚙️  No utility modules selected, skipping...');
+      return;
+    }
     logger.info('⚙️ Generating utility modules (camera, voice, call)...');
 
     final modulesRoot = path.join(projectName, 'lib', 'core', 'modules');
@@ -228,37 +332,100 @@ class ProjectGenerator {
     await Directory(voiceDir).create(recursive: true);
     await Directory(callDir).create(recursive: true);
 
-    // Camera
-    await FileUtils.writeFile(
-      path.join(cameraDir, 'camera_service.dart'),
-      ModulesTemplate.cameraService(),
-    );
+    // Create modules root directory
+    await Directory(modulesRoot).create(recursive: true);
 
-    // Speech-to-text
-    await FileUtils.writeFile(
-      path.join(voiceDir, 'speech_service.dart'),
-      ModulesTemplate.speechService(),
-    );
+    // Create module-specific directories only for selected modules
+    for (final module in selectedModules) {
+      final moduleDir = path.join(modulesRoot, module);
+      await Directory(moduleDir).create(recursive: true);
 
-    // Text-to-speech
-    await FileUtils.writeFile(
-      path.join(voiceDir, 'tts_service.dart'),
-      ModulesTemplate.ttsService(),
-    );
+      switch (module) {
+        case 'camera':
+          await FileUtils.writeFile(
+            path.join(moduleDir, 'camera_service.dart'),
+            ModulesTemplate.cameraService(),
+          );
+          logger.detail('✓ Generated camera_service.dart');
+          break;
 
-    // Audio recorder
-    await FileUtils.writeFile(
-      path.join(voiceDir, 'audio_recorder_service.dart'),
-      ModulesTemplate.audioRecorderService(),
-    );
+        case 'speech':
+          // Create voice directory for speech modules
+          final voiceDir = path.join(modulesRoot, 'voice');
+          await Directory(voiceDir).create(recursive: true);
 
-    // Call service
-    await FileUtils.writeFile(
-      path.join(callDir, 'call_service.dart'),
-      ModulesTemplate.callService(),
-    );
+          // Generate speech-to-text service
+          await FileUtils.writeFile(
+            path.join(voiceDir, 'speech_service.dart'),
+            ModulesTemplate.speechService(),
+          );
+          logger.detail('✓ Generated speech_service.dart');
 
-    logger.detail('✓ Utility modules generated');
+          // Generate text-to-speech service
+          await FileUtils.writeFile(
+            path.join(voiceDir, 'tts_service.dart'),
+            ModulesTemplate.ttsService(),
+          );
+          logger.detail('✓ Generated tts_service.dart');
+          break;
+
+        case 'recorder':
+          // Create voice directory for recorder
+          final voiceDir = path.join(modulesRoot, 'voice');
+          await Directory(voiceDir).create(recursive: true);
+
+          // Generate audio recorder service
+          await FileUtils.writeFile(
+            path.join(voiceDir, 'audio_recorder_service.dart'),
+            ModulesTemplate.audioRecorderService(),
+          );
+          logger.detail('✓ Generated audio_recorder_service.dart');
+          break;
+
+        case 'call':
+          await FileUtils.writeFile(
+            path.join(moduleDir, 'call_service.dart'),
+            ModulesTemplate.callService(),
+          );
+          logger.detail('✓ Generated call_service.dart');
+          break;
+      }
+    }
+
+    // Generate barrel file for all selected modules
+    await _generateModulesBarrelFile(modulesRoot, selectedModules);
+
+    logger.success('✨ Utility modules generated successfully!');
+  }
+
+  Future<void> _generateModulesBarrelFile(
+      String modulesRoot, List<String> selectedModules) async {
+    final barrelContent = StringBuffer('''
+// Barrel file for selected utility modules
+
+''');
+
+    for (final module in selectedModules) {
+      switch (module) {
+        case 'camera':
+          barrelContent.writeln("export 'camera/camera_service.dart';");
+          break;
+        case 'speech':
+          barrelContent.writeln("export 'voice/speech_service.dart';");
+          barrelContent.writeln("export 'voice/tts_service.dart';");
+          break;
+        case 'recorder':
+          barrelContent.writeln("export 'voice/audio_recorder_service.dart';");
+          break;
+        case 'call':
+          barrelContent.writeln("export 'call/call_service.dart';");
+          break;
+      }
+    }
+
+    final barrelPath = path.join(modulesRoot, 'modules.dart');
+    await FileUtils.writeFile(barrelPath, barrelContent.toString());
+    logger.detail('✓ Generated modules.dart (barrel file)');
   }
 
   Future<void> _generateEnhancedReusableWidgets() async {
