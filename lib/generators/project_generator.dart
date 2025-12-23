@@ -13,6 +13,7 @@ import 'package:superapp_cli/templates/firebase_operations_template.dart';
 import 'package:superapp_cli/templates/main_template.dart';
 import 'package:superapp_cli/templates/modules_template.dart'
     show ModulesTemplate;
+import 'package:superapp_cli/templates/native_permissions.dart' show NativePermissions;
 import 'package:superapp_cli/templates/pubspec_template.dart';
 import 'package:superapp_cli/templates/theme_template.dart';
 import 'package:superapp_cli/templates/screen_templates.dart';
@@ -28,6 +29,7 @@ class ProjectGenerator {
     this.includeChatbot = false,
     this.includeDocker = false,
     this.selectedModules = const [], // Add this
+    this.enabledFeatures = const [], // Add this
     List<String>? selectedLanguages,
     required this.themeColor,
     required this.authType,
@@ -49,6 +51,7 @@ class ProjectGenerator {
   final String authType;
   final Logger logger;
   final List<String> selectedModules; // Add this field
+final List<String> enabledFeatures;
 
   Future<void> generate() async {
     // Step 1: Create Flutter project
@@ -76,7 +79,7 @@ class ProjectGenerator {
       await _generateFirebaseOperations();
     }
     await _generateUtilityModules();
-    await _configureNative();
+    await configureNativePermissions();
     // Step 8: Generate screens
     await _generateScreens();
 
@@ -174,146 +177,117 @@ class ProjectGenerator {
   }
 
 // Add this method to your ProjectGenerator class
-  Future<void> _configureNative() async {
-    await _configureAndroidManifest();
-    await _configureIosInfoPlist();
+Future<void> configureNativePermissions() async {
+  await _configureAndroidManifest();
+  await _configureIosInfoPlist();
+}
+
+Future<void> _configureAndroidManifest() async {
+  final manifestPath = path.join(
+    projectName,
+    'android',
+    'app',
+    'src',
+    'main',
+    'AndroidManifest.xml',
+  );
+
+  final file = File(manifestPath);
+  if (!await file.exists()) {
+    logger.warn('AndroidManifest.xml not found');
+    return;
   }
 
-  Future<void> _configureAndroidManifest() async {
-    final manifestPath = path.join(
-      projectName,
-      'android',
-      'app',
-      'src',
-      'main',
-      'AndroidManifest.xml',
+  var content = await file.readAsString();
+
+  final permissions = <String>{
+    'android.permission.INTERNET',
+    'android.permission.ACCESS_NETWORK_STATE',
+  };
+
+  for (final feature in enabledFeatures) {
+    permissions.addAll(NativePermissions.android[feature] ?? []);
+  }
+
+  final buffer = StringBuffer();
+  for (final p in permissions) {
+    if (!content.contains(p)) {
+      buffer.writeln(
+          '    <uses-permission android:name="$p" />');
+    }
+  }
+
+  if (buffer.isEmpty) {
+    logger.detail('Android permissions already present');
+    return;
+  }
+
+  if (content.contains('<application')) {
+    content = content.replaceFirst(
+      '<application',
+      '${buffer.toString()}\n    <application',
     );
-
-    final manifestFile = File(manifestPath);
-    if (!await manifestFile.exists()) {
-      logger.warn('AndroidManifest.xml not found at $manifestPath');
-      return;
-    }
-
-    var content = await manifestFile.readAsString();
-
-    // Build permissions based on selected modules
-    final permissions = StringBuffer();
-    permissions.writeln(
-        '    <uses-permission android:name="android.permission.INTERNET" />');
-    permissions.writeln(
-        '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />');
-
-    // Add module-specific permissions
-    if (selectedModules.contains('camera') ||
-        selectedModules.contains('recorder')) {
-      permissions.writeln(
-          '    <uses-permission android:name="android.permission.CAMERA" />');
-      permissions.writeln(
-          '    <uses-permission android:name="android.permission.RECORD_AUDIO" />');
-    }
-    if (selectedModules.contains('camera')) {
-      permissions.writeln(
-          '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />');
-      permissions.writeln(
-          '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />');
-      permissions.writeln(
-          '    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />');
-      permissions.writeln(
-          '    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />');
-    }
-    if (selectedModules.contains('call')) {
-      permissions.writeln(
-          '    <uses-permission android:name="android.permission.CALL_PHONE" />');
-    }
-
-    // Don't add twice – check a single known permission
-    if (!content.contains('android.permission.INTERNET')) {
-      // Insert just before <application ...>
-      if (content.contains('<application')) {
-        content = content.replaceFirst(
-          '<application',
-          '${permissions.toString()}\n    <application',
-        );
-      } else {
-        // fallback: insert before closing </manifest>
-        content = content.replaceFirst(
-          '</manifest>',
-          '${permissions.toString()}\n</manifest>',
-        );
-      }
-
-      await manifestFile.writeAsString(content);
-      logger.detail('✓ Updated AndroidManifest.xml with module permissions');
-    } else {
-      logger.detail(
-          'AndroidManifest.xml already contains permissions, skipping.');
-    }
-  }
-
-  Future<void> _configureIosInfoPlist() async {
-    final infoPlistPath = path.join(
-      projectName,
-      'ios',
-      'Runner',
-      'Info.plist',
+  } else {
+    content = content.replaceFirst(
+      '</manifest>',
+      '${buffer.toString()}\n</manifest>',
     );
+  }
 
-    final plistFile = File(infoPlistPath);
-    if (!await plistFile.exists()) {
-      logger.warn('Info.plist not found at $infoPlistPath');
-      return;
-    }
+  await file.writeAsString(content);
+  logger.detail('✓ Android permissions injected');
+}
+Future<void> _configureIosInfoPlist() async {
+  final plistPath = path.join(
+    projectName,
+    'ios',
+    'Runner',
+    'Info.plist',
+  );
 
-    var content = await plistFile.readAsString();
+  final file = File(plistPath);
+  if (!await file.exists()) {
+    logger.warn('Info.plist not found');
+    return;
+  }
 
-    // Build usage descriptions based on selected modules
-    final plistEntries = StringBuffer();
+  var content = await file.readAsString();
 
-    if (selectedModules.contains('camera')) {
-      plistEntries.writeln('    <key>NSCameraUsageDescription</key>');
-      plistEntries.writeln(
-          '    <string>This app requires access to the camera to capture photos and videos.</string>');
-      plistEntries.writeln('    <key>NSMicrophoneUsageDescription</key>');
-      plistEntries.writeln(
-          '    <string>This app requires access to the microphone to record audio.</string>');
-      plistEntries.writeln('    <key>NSPhotoLibraryUsageDescription</key>');
-      plistEntries.writeln(
-          '    <string>This app requires access to your photo library to select images.</string>');
-      plistEntries.writeln('    <key>NSPhotoLibraryAddUsageDescription</key>');
-      plistEntries.writeln(
-          '    <string>This app saves photos to your library.</string>');
-    }
+  final Map<String, String> entries = {};
 
-    if (selectedModules.contains('speech') ||
-        selectedModules.contains('recorder')) {
-      plistEntries.writeln('    <key>NSMicrophoneUsageDescription</key>');
-      plistEntries.writeln(
-          '    <string>This app requires access to the microphone for speech recognition and audio recording.</string>');
-    }
-
-    if (selectedModules.contains('call')) {
-      plistEntries.writeln('    <key>NSContactsUsageDescription</key>');
-      plistEntries.writeln(
-          '    <string>This app may access your contacts to make calls.</string>');
-    }
-
-    // Avoid duplicating – check if we need to add any entries
-    if (selectedModules.isNotEmpty &&
-        !content.contains('NSCameraUsageDescription')) {
-      // Insert before </dict>
-      content = content.replaceFirst(
-        '</dict>',
-        '${plistEntries.toString()}\n</dict>',
-      );
-
-      await plistFile.writeAsString(content);
-      logger.detail('✓ Updated iOS Info.plist with module usage descriptions');
-    } else {
-      logger.detail(
-          'Info.plist already contains usage descriptions or no modules selected, skipping.');
+  for (final feature in enabledFeatures) {
+    final map = NativePermissions.ios[feature];
+    if (map != null) {
+      entries.addAll(map);
     }
   }
+
+  if (entries.isEmpty) {
+    logger.detail('No iOS permissions needed');
+    return;
+  }
+
+  final buffer = StringBuffer();
+  for (final entry in entries.entries) {
+    if (!content.contains('<key>${entry.key}</key>')) {
+      buffer.writeln('    <key>${entry.key}</key>');
+      buffer.writeln('    <string>${entry.value}</string>');
+    }
+  }
+
+  if (buffer.isEmpty) {
+    logger.detail('iOS permissions already present');
+    return;
+  }
+
+  content = content.replaceFirst(
+    '</dict>',
+    '${buffer.toString()}\n</dict>',
+  );
+
+  await file.writeAsString(content);
+  logger.detail('✓ iOS permissions injected');
+}
 
   Future<void> _generateUtilityModules() async {
     if (selectedModules.isEmpty) {
