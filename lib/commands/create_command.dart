@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:superapp_cli/generators/project_generator.dart';
