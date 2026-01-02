@@ -1,4 +1,4 @@
-## 1.0.0
+## 0.1.0
 
 - Initial release of SuperApp CLI
 - Interactive Flutter project generator
