@@ -443,4 +443,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📧 Contact
 
 - Ajay Chikshetty — GitHub: https://github.com/ajaychikshetty | LinkedIn: https://www.linkedin.com/in/ajaychikshetty
-- Saksham Sharma — GitHub: https://github.com/SakshamVK | LinkedIn: https://www.linkedin.com/in/sakshamvinodkhare/
+- Saksham Khare — GitHub: https://github.com/SakshamVK | LinkedIn: https://www.linkedin.com/in/sakshamvinodkhare/

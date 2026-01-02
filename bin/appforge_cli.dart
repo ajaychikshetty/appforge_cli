@@ -9,7 +9,7 @@ void main(List<String> arguments) async {
   final logger = Logger();
 
   final runner = CommandRunner<int>(
-    'superapp',
+    'appforge',
     'Generate production-ready Flutter apps instantly',
   )
     ..addCommand(CreateCommand(logger: logger))
