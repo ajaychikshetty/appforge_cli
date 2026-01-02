@@ -2,6 +2,7 @@ import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:superapp_cli/generators/project_generator.dart';
 import 'dart:io';
+
 class CreateCommand extends Command<int> {
   CreateCommand({required this.logger}) {
     argParser
@@ -189,16 +190,7 @@ class CreateCommand extends Command<int> {
       if (includeFirebase) {
         // Ask which Firebase modules to include
         logger.info('');
-        final selectedModules = logger.chooseAny(
-          '📦 Select Firebase modules (space to select, enter to continue):',
-          choices: [
-            'auth - Authentication',
-            'firestore - Cloud Firestore (NoSQL Database)',
-            'storage - Cloud Storage',
-            'fcm - Cloud Messaging (Push Notifications)',
-          ],
-          defaultValues: ['auth - Authentication'],
-        );
+        final selectedModules = <String>['auth - Authentication'];
 
         // Extract module keys
         firebaseModules =
@@ -378,8 +370,14 @@ class CreateCommand extends Command<int> {
         selectedModules: selectedModules,
       );
 
-      await generator.generate();
+      await generator.generate(
+        onBeforeFirebase: () {
+          progress.cancel(); // or complete()
+        },
+      );
+
       progress.complete('Project created successfully!');
+
       logger
         ..info('')
         ..success('✨ Flutter app created: $projectName')
@@ -389,18 +387,6 @@ class CreateCommand extends Command<int> {
             '🤖 AI Chatbot: ${includeChatbot ? 'Enabled (Gemini)' : 'Disabled'}')
         ..success('🔥 Firebase: ${includeFirebase ? 'Enabled' : 'Disabled'}')
         ..success('🌍 Languages: ${selectedLanguages.join(', ')}');
-
-      // Warn if Firebase is enabled and non-interactive, but flutterfire configure is required
-      if (includeFirebase == true) {
-        logger
-          ..info('')
-          ..warn('⚠️  Firebase requires manual configuration.')
-          ..info(
-              '   Please run the following command in your project directory:')
-          ..info('     flutterfire configure')
-          ..info(
-              '   This command is interactive and must be completed before running your app.');
-      }
 
       if (includeWeb) {
         logger.success('🌐 Flutter Web: Enabled');

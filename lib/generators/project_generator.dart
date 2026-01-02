@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:mason_logger/mason_logger.dart';
+
 import 'package:path/path.dart' as path;
 import 'package:superapp_cli/templates/EnhancedWidgetsPart2.dart';
 import 'package:superapp_cli/templates/EnhancedWidgetsTemplate.dart';
@@ -20,6 +21,8 @@ import 'package:superapp_cli/templates/pubspec_template.dart';
 import 'package:superapp_cli/templates/theme_template.dart';
 import 'package:superapp_cli/templates/screen_templates.dart';
 import 'package:superapp_cli/utils/file_utils.dart';
+
+typedef VoidCallBack = void Function();
 
 class ProjectGenerator {
   ProjectGenerator({
@@ -57,7 +60,7 @@ class ProjectGenerator {
   final Logger logger;
   final List<String> selectedModules;
 
-  Future<void> generate() async {
+  Future<void> generate({VoidCallBack? onBeforeFirebase}) async {
     final progress = logger.progress('Creating Flutter app: $projectName');
 
     try {
@@ -129,6 +132,7 @@ class ProjectGenerator {
       // Step 16: Configure Firebase AFTER completing progress
       // This is crucial - Firebase config needs interactive input
       if (includeFirebase) {
+        onBeforeFirebase?.call();
         await _configureFirebase();
       }
 
@@ -237,10 +241,18 @@ class ProjectGenerator {
       'minSdk = 23',
     );
 
-    content = content.replaceAll(
-      'sourceCompatibility = JavaVersion.VERSION_11\n        targetCompatibility = JavaVersion.VERSION_11\n    }',
-      'sourceCompatibility = JavaVersion.VERSION_11\n        targetCompatibility = JavaVersion.VERSION_11\n        isCoreLibraryDesugaringEnabled = true\n    }',
+    // Use regex to handle varying whitespace when adding isCoreLibraryDesugaringEnabled
+    final compileOptionsRegex = RegExp(
+      r'(sourceCompatibility\s*=\s*JavaVersion\.VERSION_11\s*\n\s*targetCompatibility\s*=\s*JavaVersion\.VERSION_11)(\s*\n\s*\})',
     );
+    if (compileOptionsRegex.hasMatch(content) &&
+        !content.contains('isCoreLibraryDesugaringEnabled')) {
+      content = content.replaceFirstMapped(
+        compileOptionsRegex,
+        (match) =>
+            '${match.group(1)}\n        isCoreLibraryDesugaringEnabled = true${match.group(2)}',
+      );
+    }
 
     if (!content.contains('coreLibraryDesugaring')) {
       final flutterBlockMatch =
