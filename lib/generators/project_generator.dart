@@ -205,6 +205,7 @@ class ProjectGenerator {
   }
 
   Future<void> _configureNative() async {
+    await _configureAndroidGradleProperties();
     await _configureAndroidBuildGradle();
     await _configureAndroidManifest();
     await _configureIosInfoPlist();
@@ -368,6 +369,43 @@ dependencies {
 
     await file.writeAsString(content);
     logger.detail('✓ iOS permissions injected');
+  }
+
+  Future<void> _configureAndroidGradleProperties() async {
+    if (Platform.isWindows) {
+      logger.warn(
+          '⚠️ Windows detected: disabling Kotlin incremental compilation for stability.');
+    }
+    final gradlePropsPath = path.join(
+      projectName,
+      'android',
+      'gradle.properties',
+    );
+
+    final file = File(gradlePropsPath);
+    if (!await file.exists()) {
+      logger.warn('gradle.properties not found');
+      return;
+    }
+
+    var content = await file.readAsString();
+
+    // Prevent Kotlin incremental cache crashes on Windows
+    const fixes = '''
+# Added by SuperApp CLI for Windows & Kotlin stability
+kotlin.incremental=false
+kotlin.incremental.useClasspathSnapshot=false
+org.gradle.caching=false
+org.gradle.daemon=true
+''';
+
+    if (!content.contains('kotlin.incremental=false')) {
+      content += '\n$fixes';
+      await file.writeAsString(content);
+      logger.detail('✓ Disabled Kotlin incremental compilation (Windows safe)');
+    } else {
+      logger.detail('Kotlin incremental already disabled');
+    }
   }
 
   Future<void> _generateUtilityModules() async {
