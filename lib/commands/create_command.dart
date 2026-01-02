@@ -1,8 +1,7 @@
-import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:superapp_cli/generators/project_generator.dart';
-
+import 'dart:io';
 class CreateCommand extends Command<int> {
   CreateCommand({required this.logger}) {
     argParser
@@ -381,27 +380,6 @@ class CreateCommand extends Command<int> {
 
       await generator.generate();
       progress.complete('Project created successfully!');
-
-      // Run flutterfire configure inside the generated project folder
-      if (includeFirebase == true) {
-        logger.info('');
-        logger.info('Running flutterfire configure inside ./$projectName ...');
-
-        final success = await _runFlutterFireConfigure(
-          projectName: projectName,
-          logger: logger,
-        );
-
-        if (!success) {
-          logger.warn('Firebase configuration incomplete.');
-
-          logger.info('');
-          logger.info('To configure manually later:');
-          logger.info('  cd $projectName');
-          logger.info('  flutterfire configure');
-        }
-      }
-
       logger
         ..info('')
         ..success('✨ Flutter app created: $projectName')
@@ -411,6 +389,18 @@ class CreateCommand extends Command<int> {
             '🤖 AI Chatbot: ${includeChatbot ? 'Enabled (Gemini)' : 'Disabled'}')
         ..success('🔥 Firebase: ${includeFirebase ? 'Enabled' : 'Disabled'}')
         ..success('🌍 Languages: ${selectedLanguages.join(', ')}');
+
+      // Warn if Firebase is enabled and non-interactive, but flutterfire configure is required
+      if (includeFirebase == true) {
+        logger
+          ..info('')
+          ..warn('⚠️  Firebase requires manual configuration.')
+          ..info(
+              '   Please run the following command in your project directory:')
+          ..info('     flutterfire configure')
+          ..info(
+              '   This command is interactive and must be completed before running your app.');
+      }
 
       if (includeWeb) {
         logger.success('🌐 Flutter Web: Enabled');
@@ -547,44 +537,6 @@ class CreateCommand extends Command<int> {
       logger.err('Error: $e');
       logger.detail(st.toString());
       return 1;
-    }
-  }
-
-  Future<bool> _runFlutterFireConfigure({
-    required String projectName,
-    required Logger logger,
-  }) async {
-    try {
-      // Start flutterfire configure in the generated app folder
-      final process = await Process.start(
-        'flutterfire',
-        ['configure'],
-        workingDirectory: projectName,
-        runInShell: true,
-      );
-
-      // Pipe stdout/stderr to current console so user sees prompts
-      stdout.addStream(process.stdout);
-      stderr.addStream(process.stderr);
-
-      final exitCode = await process.exitCode;
-
-      if (exitCode == 0) {
-        logger.success('✓ flutterfire configure completed successfully.');
-        return true;
-      } else {
-        logger.err('flutterfire configure exited with code $exitCode.');
-        return false;
-      }
-    } on ProcessException catch (e) {
-      logger.err('Failed to run flutterfire configure: ${e.message}');
-      logger.info('Make sure FlutterFire CLI is installed:');
-      logger.info('  dart pub global activate flutterfire_cli');
-      logger.info('  flutterfire --version');
-      return false;
-    } catch (e) {
-      logger.err('Unexpected error while running flutterfire configure: $e');
-      return false;
     }
   }
 
