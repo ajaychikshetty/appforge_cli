@@ -29,3 +29,11 @@ Authentication type
 Firebase modules
 
 Web & Docker support (optional)
+
+# ℹ️ Notes
+
+Flutter SDK must be installed
+
+Firebase CLI is required for Firebase features
+
+Works on macOS, Linux, and Windows
