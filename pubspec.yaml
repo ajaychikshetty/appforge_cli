@@ -14,9 +14,8 @@ topics:
   - flutter
   - generator
   - firebase
-  - docker
   - scaffold
-  
+
 documentation: https://github.com/ajaychikshetty/appforge_cli#readme
 
 dependencies:
