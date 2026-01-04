@@ -1,0 +1,3 @@
+# Legacy unused templates (renamed versions exist)
+lib/templates/chatApp_screens.dart
+lib/templates/chatApp_templates.dart
