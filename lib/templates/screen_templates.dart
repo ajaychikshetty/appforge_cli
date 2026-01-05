@@ -159,6 +159,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     bool includeLocalization = true,
     bool includeChatbot = false,
   }) {
+    // Always include localization import, but it will be used with null-safe fallbacks
     final localizationImports = includeLocalization
         ? '''
 import 'package:provider/provider.dart' as provider_pkg;
@@ -312,7 +313,7 @@ import '../../../core/modules/contacts/contact.dart';$localizationImports
 $chatbotImports
 
 
-// TODO: Add native language names to each language file
+// Helper function for native language names
 String _nativeLanguageName(String code) {
   const names = {
     'ar': 'العربية',
@@ -354,11 +355,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Demo Page',
+        title: 'Test App',
         actions: [
           $localizationButton
           const SizedBox(width: 4),

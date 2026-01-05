@@ -6,6 +6,14 @@ A powerful command-line tool to generate production-ready Flutter applications w
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
+<p align="center">
+  <a href="https://youtu.be/xC8TyMydvUI">
+    <img src="appforge/background.jpg" alt="AppForge CLI Demo Video" width="800"/>
+  </a>
+  <br>
+  <em>👆 Click to watch the demo video</em>
+</p>
+
 ## ✨ Features
 
 ### 🎨 **Beautiful Themes**
@@ -52,7 +60,16 @@ A powerful command-line tool to generate production-ready Flutter applications w
 - Login/Signup screens (based on auth type)
 - All screens are responsive and themed
 
-## 📦 Installation
+## � Screenshots
+
+<p align="center">
+  <img src="appforge/image_1.jpg" alt="Screenshot 1" width="200"/>
+  <img src="appforge/image_2.jpg" alt="Screenshot 2" width="200"/>
+  <img src="appforge/image_3.jpg" alt="Screenshot 3" width="200"/>
+  <img src="appforge/image_4.jpg" alt="Screenshot 4" width="200"/>
+</p>
+
+## �📦 Installation
 
 ### Prerequisites
 - Dart SDK (>=3.5.0)
