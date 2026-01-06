@@ -2,9 +2,9 @@ name: appforge_cli
 license: MIT
 description: A powerful CLI to generate production-ready Flutter apps with Firebase, localization, Docker, and modular architecture.
 version: 0.1.1
-homepage: https://github.com/ajaychikshetty/appforge_cli
-repository: https://github.com/ajaychikshetty/appforge_cli
-issue_tracker: https://github.com/ajaychikshetty/appforge_cli/issues/
+homepage: https://github.com/appforge-cli/appforge_cli/
+repository: https://github.com/appforge-cli/appforge_cli/
+issue_tracker: https://github.com/appforge-cli/appforge_cli/issues/
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -16,7 +16,7 @@ topics:
   - firebase
   - scaffold
 
-documentation: https://github.com/ajaychikshetty/appforge_cli#readme
+documentation: https://github.com/appforge-cli/appforge_cli#readme
 
 dependencies:
   args: ^2.4.2
