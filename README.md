@@ -9,7 +9,7 @@ A powerful command-line tool to generate production-ready Flutter applications w
 <p align="center">
   <a href="https://youtu.be/xC8TyMydvUI">
     <img
-      src="https://raw.githubusercontent.com/appforge-cli/appforge_cli/main/appforge/background.jpg"
+      src="https://raw.githubusercontent.com/appforge-cli/appforge_cli/main/appforge/Background.jpg"
       alt="AppForge CLI Demo"
       width="720"
     />
