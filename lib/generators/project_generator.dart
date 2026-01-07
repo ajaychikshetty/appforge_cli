@@ -276,7 +276,7 @@ class ProjectGenerator {
       logger.info(
           '  Dependencies: ${(moduleInfo['dependencies'] as List<String>).join(', ')}');
 
-      final include = await logger.confirm(
+      final include = logger.confirm(
         'Include ${moduleInfo['name']}?',
         defaultValue: false,
       );
